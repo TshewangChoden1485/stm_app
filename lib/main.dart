@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'group.dart';
+import 'analytics.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -158,12 +159,12 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   // Add your real pages here
-  final List<Widget> _pages = const [
+  final List<Widget> _pages = [
     DashboardPage(),
     CalendarPage(),    
     TasksPage(),
-    Center(child: Text('Groups Page', style: TextStyle(color: Colors.white))),
-    Center(child: Text('Analytics Page', style: TextStyle(color: Colors.white))),
+    GroupsPage(),
+    AnalyticsPage(),
     Center(child: Text('Settings Page', style: TextStyle(color: Colors.white))),
   ];
 
