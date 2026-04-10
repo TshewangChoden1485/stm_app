@@ -1,68 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+// ignore: unused_import
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:async';
+import 'data.dart';
+import 'study.dart';
 import '../../group.dart';
 import '../../analytics.dart';
 import'/settings.dart';
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
-final List<Map<String, dynamic>> sharedTasks = [
-  {
-    'title': 'Finish Assignment',
-    'status': 'In Process',
-    'dueDate': '2026-04-14',
-    'done': false,
-  },
-  {
-    'title': 'Study Flutter',
-    'status': 'Started',
-    'dueDate': '2026-04-20',
-    'done': false,
-  },
-];
-
-final List<Map<String, dynamic>> sharedAssignments = [
-  {
-    'id': 1,
-    'title': 'Flutter Basics Assignment',
-    'description': 'Create a simple counter app',
-    'dueDate': '2026-04-15',
-    'totalMarks': 100,
-  },
-];
-
-String formatDaysLeft(String dueDate) {
-  if (dueDate.isEmpty) return '';
-  final DateTime? due = DateTime.tryParse(dueDate);
-  if (due == null) return '';
-  final int daysLeft = due.difference(DateTime.now()).inDays;
-  if (daysLeft > 1) return '$daysLeft days left';
-  if (daysLeft == 1) return '1 day left';
-  if (daysLeft == 0) return 'Due today';
-  return '${daysLeft.abs()} days overdue';
-}
-
-void mirrorAssignmentToTask(Map<String, dynamic> assignment) {
-  final int index = sharedTasks.indexWhere((task) => task['assignmentId'] == assignment['id']);
-  final Map<String, dynamic> taskEntry = {
-    'title': assignment['title'],
-    'status': 'Started',
-    'dueDate': assignment['dueDate'],
-    'done': false,
-    'assignmentId': assignment['id'],
-  };
-
-  if (index >= 0) {
-    sharedTasks[index] = taskEntry;
-  } else {
-    sharedTasks.add(taskEntry);
-  }
-}
-
-void removeTaskForAssignment(int assignmentId) {
-  sharedTasks.removeWhere((task) => task['assignmentId'] == assignmentId);
-}
-
-void main() {
+Future<void> main() async {
   for (var assignment in sharedAssignments) {
     mirrorAssignmentToTask(assignment);
   }
@@ -295,7 +244,7 @@ class _HomePageState extends State<HomePage> {
   // Add your real pages here
   final List<Widget> _pages = [
     DashboardPage(),
-    CalendarPage(),    
+    StudyPage(),    
     TasksPage(),
     GroupsPage(),
     AnalyticsPage(),
@@ -328,8 +277,8 @@ class _HomePageState extends State<HomePage> {
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
+            icon: Icon(Icons.timer),
+            label: 'Study',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.task),
@@ -605,7 +554,10 @@ class _CalendarPageState extends State<CalendarPage> {
       ),
     );
   }
-}// Tasks Page
+}
+
+// Study Page with Pomodoro Timer
+// Tasks Page
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
 

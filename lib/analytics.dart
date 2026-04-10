@@ -1,10 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'data.dart';
+import 'study.dart';
 
-class AnalyticsPage extends StatelessWidget {
+class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
 
   @override
+  State<AnalyticsPage> createState() => _AnalyticsPageState();
+}
+
+class _AnalyticsPageState extends State<AnalyticsPage> {
+  @override
   Widget build(BuildContext context) {
+    Map<String, int> statusCounts = {
+      'Not Started': 0,
+      'Started': 0,
+      'In Process': 0,
+      'Done': 0,
+    };
+    for (var task in sharedTasks) {
+      String status = task['status'] ?? 'Started';
+      if (statusCounts.containsKey(status)) {
+        statusCounts[status] = statusCounts[status]! + 1;
+      }
+    }
+    int totalTasks = sharedTasks.length;
+    int doneTasks = sharedTasks.where((task) => task['done'] == true).length;
+
     return Container(
       color: Colors.black, // background color for the page
       child: SafeArea(
@@ -42,16 +65,17 @@ class AnalyticsPage extends StatelessWidget {
               // Stats row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   AnalyticsCard(
                     label: 'Tasks Completed',
-                    value: '8/12',
+                    value: '$doneTasks/$totalTasks',
                     color: Colors.blue,
                   ),
                   AnalyticsCard(
                     label: 'Study Hours',
-                    value: '15h',
+                    value: '${(totalStudySeconds / 3600).toStringAsFixed(1)}h',
                     color: Colors.green,
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudyPage())),
                   ),
                   AnalyticsCard(
                     label: 'Units Completed',
@@ -63,7 +87,7 @@ class AnalyticsPage extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Graph placeholder
+              // Task Status Pie Chart
               Container(
                 height: 200,
                 width: double.infinity,
@@ -71,10 +95,102 @@ class AnalyticsPage extends StatelessWidget {
                   color: const Color(0xFF1C1C1E),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Center(
-                  child: Text(
-                    '📊 Graph Placeholder',
-                    style: TextStyle(color: Colors.white54),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: PieChart(
+                    PieChartData(
+                      sections: [
+                        PieChartSectionData(
+                          value: statusCounts['Not Started']!.toDouble(),
+                          title: 'Not Started',
+                          color: Colors.grey,
+                          radius: 50,
+                        ),
+                        PieChartSectionData(
+                          value: statusCounts['Started']!.toDouble(),
+                          title: 'Started',
+                          color: Colors.orange,
+                          radius: 50,
+                        ),
+                        PieChartSectionData(
+                          value: statusCounts['In Process']!.toDouble(),
+                          title: 'In Process',
+                          color: const Color(0xFF4A7BFF),
+                          radius: 50,
+                        ),
+                        PieChartSectionData(
+                          value: statusCounts['Done']!.toDouble(),
+                          title: 'Done',
+                          color: Colors.green,
+                          radius: 50,
+                        ),
+                      ],
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Tasks Completed Graph
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1E),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: BarChart(
+                    BarChartData(
+                      barGroups: [
+                        BarChartGroupData(
+                          x: 0,
+                          barRods: [
+                            BarChartRodData(
+                              toY: doneTasks.toDouble(),
+                              color: Colors.green,
+                              width: 20,
+                            ),
+                          ],
+                        ),
+                        BarChartGroupData(
+                          x: 1,
+                          barRods: [
+                            BarChartRodData(
+                              toY: (totalTasks - doneTasks).toDouble(),
+                              color: Colors.red,
+                              width: 20,
+                            ),
+                          ],
+                        ),
+                      ],
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              switch (value.toInt()) {
+                                case 0:
+                                  return const Text('Completed', style: TextStyle(color: Colors.white, fontSize: 12));
+                                case 1:
+                                  return const Text('Pending', style: TextStyle(color: Colors.white, fontSize: 12));
+                                default:
+                                  return const Text('');
+                              }
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      gridData: FlGridData(show: false),
+                    ),
                   ),
                 ),
               ),
@@ -115,13 +231,14 @@ class AnalyticsCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap;
 
   const AnalyticsCard(
-      {super.key, required this.label, required this.value, required this.color});
+      {super.key, required this.label, required this.value, required this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    Widget card = Container(
       width: 100,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -147,6 +264,15 @@ class AnalyticsCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      card = GestureDetector(
+        onTap: onTap,
+        child: card,
+      );
+    }
+
+    return card;
   }
 }
 
