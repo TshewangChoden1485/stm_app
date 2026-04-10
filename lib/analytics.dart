@@ -54,7 +54,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               const SizedBox(height: 20),
 
               const Text(
-                "Performance Stats",
+                "Performance Statistics",
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -89,7 +89,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
               // Task Status Pie Chart
               Container(
-                height: 200,
+                height: 500,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: const Color(0xFF1C1C1E),
@@ -104,120 +104,34 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                           value: statusCounts['Not Started']!.toDouble(),
                           title: 'Not Started',
                           color: Colors.grey,
-                          radius: 50,
+                          radius: 70,
                         ),
                         PieChartSectionData(
                           value: statusCounts['Started']!.toDouble(),
                           title: 'Started',
                           color: Colors.orange,
-                          radius: 50,
+                          radius: 70,
                         ),
                         PieChartSectionData(
                           value: statusCounts['In Process']!.toDouble(),
                           title: 'In Process',
                           color: const Color(0xFF4A7BFF),
-                          radius: 50,
+                          radius: 70,
                         ),
                         PieChartSectionData(
                           value: statusCounts['Done']!.toDouble(),
                           title: 'Done',
                           color: Colors.green,
-                          radius: 50,
+                          radius: 70,
                         ),
                       ],
                       sectionsSpace: 2,
-                      centerSpaceRadius: 40,
+                      centerSpaceRadius: 80,
                     ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 20),
-
-              // Tasks Completed Graph
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1C1E),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: BarChart(
-                    BarChartData(
-                      barGroups: [
-                        BarChartGroupData(
-                          x: 0,
-                          barRods: [
-                            BarChartRodData(
-                              toY: doneTasks.toDouble(),
-                              color: Colors.green,
-                              width: 20,
-                            ),
-                          ],
-                        ),
-                        BarChartGroupData(
-                          x: 1,
-                          barRods: [
-                            BarChartRodData(
-                              toY: (totalTasks - doneTasks).toDouble(),
-                              color: Colors.red,
-                              width: 20,
-                            ),
-                          ],
-                        ),
-                      ],
-                      titlesData: FlTitlesData(
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              switch (value.toInt()) {
-                                case 0:
-                                  return const Text('Completed', style: TextStyle(color: Colors.white, fontSize: 12));
-                                case 1:
-                                  return const Text('Pending', style: TextStyle(color: Colors.white, fontSize: 12));
-                                default:
-                                  return const Text('');
-                              }
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: true, reservedSize: 30),
-                        ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      gridData: FlGridData(show: false),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              const Text(
-                "Recent Activity",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              const ActivityCard(
-                title: 'Completed ICT306 Assignment',
-                subtitle: '2 hours ago',
-              ),
-              const ActivityCard(
-                title: 'Attended Group Study ICT305',
-                subtitle: 'Yesterday',
-              ),
-              const ActivityCard(
-                title: 'Submitted Project ICT309',
-                subtitle: '3 days ago',
-              ),
             ],
           ),
         ),

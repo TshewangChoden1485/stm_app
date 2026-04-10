@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:async';
 import 'data.dart';
-import 'study.dart';
 import '../../group.dart';
 import '../../analytics.dart';
 import'/settings.dart';
@@ -244,7 +243,7 @@ class _HomePageState extends State<HomePage> {
   // Add your real pages here
   final List<Widget> _pages = [
     DashboardPage(),
-    StudyPage(),    
+    CalendarPage(),    
     TasksPage(),
     GroupsPage(),
     AnalyticsPage(),
@@ -278,7 +277,7 @@ class _HomePageState extends State<HomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.timer),
-            label: 'Study',
+            label: 'Calendar',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.task),
