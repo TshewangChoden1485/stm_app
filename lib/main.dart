@@ -1,10 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../group.dart';
 import '../../analytics.dart';
 import'/settings.dart';
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
+final List<Map<String, dynamic>> sharedTasks = [
+  {
+    'title': 'Finish Assignment',
+    'status': 'In Process',
+    'dueDate': '2026-04-14',
+    'done': false,
+  },
+  {
+    'title': 'Study Flutter',
+    'status': 'Started',
+    'dueDate': '2026-04-20',
+    'done': false,
+  },
+];
+
+final List<Map<String, dynamic>> sharedAssignments = [
+  {
+    'id': 1,
+    'title': 'Flutter Basics Assignment',
+    'description': 'Create a simple counter app',
+    'dueDate': '2026-04-15',
+    'totalMarks': 100,
+  },
+];
+
+String formatDaysLeft(String dueDate) {
+  if (dueDate.isEmpty) return '';
+  final DateTime? due = DateTime.tryParse(dueDate);
+  if (due == null) return '';
+  final int daysLeft = due.difference(DateTime.now()).inDays;
+  if (daysLeft > 1) return '$daysLeft days left';
+  if (daysLeft == 1) return '1 day left';
+  if (daysLeft == 0) return 'Due today';
+  return '${daysLeft.abs()} days overdue';
+}
+
+void mirrorAssignmentToTask(Map<String, dynamic> assignment) {
+  final int index = sharedTasks.indexWhere((task) => task['assignmentId'] == assignment['id']);
+  final Map<String, dynamic> taskEntry = {
+    'title': assignment['title'],
+    'status': 'Started',
+    'dueDate': assignment['dueDate'],
+    'done': false,
+    'assignmentId': assignment['id'],
+  };
+
+  if (index >= 0) {
+    sharedTasks[index] = taskEntry;
+  } else {
+    sharedTasks.add(taskEntry);
+  }
+}
+
+void removeTaskForAssignment(int assignmentId) {
+  sharedTasks.removeWhere((task) => task['assignmentId'] == assignmentId);
+}
+
 void main() {
+  for (var assignment in sharedAssignments) {
+    mirrorAssignmentToTask(assignment);
+  }
   runApp(const MyApp());
 }
 
@@ -254,15 +315,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_selectedIndex], // show the selected page
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF4A7BFF),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add Task clicked')),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -396,6 +448,7 @@ class TaskCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         
+        // ignore: deprecated_member_use
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -561,62 +614,242 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  final List<Map<String, dynamic>> _tasks = [
-    {'title': 'Finish Assignment', 'done': false},
-    {'title': 'Study Flutter', 'done': false},
-  ];
-
   void _addTask() {
-  TextEditingController controller = TextEditingController();
+    TextEditingController titleController = TextEditingController();
+    TextEditingController dueDateController = TextEditingController();
+    String selectedStatus = 'Started';
+    DateTime? selectedDate;
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text(
-          'Add Task',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'Enter task name',
-            hintStyle: TextStyle(color: Colors.white54),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                setState(() {
-                  _tasks.add({
-                    'title': controller.text,
-                    'done': false
-                  });
-                });
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A7BFF),
-            ),
-            child: const Text('Add'),
-          ),
-        ],
-      );
-    },
-  );
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1A1A),
+              title: const Text(
+                'Add Task',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter task name',
+                        hintStyle: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dueDateController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Due Date',
+                        hintStyle: TextStyle(color: Colors.white54),
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                        );
+                        if (picked != null) {
+                          dialogSetState(() {
+                            selectedDate = picked;
+                            dueDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      // ignore: deprecated_member_use
+                      value: selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white38),
+                        ),
+                      ),
+                      dropdownColor: const Color(0xFF1A1A1A),
+                      items: const [
+                        DropdownMenuItem(value: 'Not Started', child: Text('Not Started')),
+                        DropdownMenuItem(value: 'Started', child: Text('Started')),
+                        DropdownMenuItem(value: 'In Process', child: Text('In Process')),
+                        DropdownMenuItem(value: 'Done', child: Text('Done')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          dialogSetState(() {
+                            selectedStatus = value;
+                          });
+                        }
+                      },
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.isNotEmpty && dueDateController.text.isNotEmpty) {
+                      setState(() {
+                        sharedTasks.add({
+                          'title': titleController.text,
+                          'dueDate': dueDateController.text,
+                          'status': selectedStatus,
+                          'done': selectedStatus == 'Done',
+                        });
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A7BFF),
+                  ),
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _editTask(int index) {
+    final task = sharedTasks[index];
+    TextEditingController titleController = TextEditingController(text: task['title']);
+    TextEditingController dueDateController = TextEditingController(text: task['dueDate']);
+    String selectedStatus = task['status'] ?? 'Started';
+    DateTime? selectedDate = DateTime.tryParse(task['dueDate']);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1A1A),
+              title: const Text(
+                'Edit Task',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter task name',
+                        hintStyle: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dueDateController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Due Date',
+                        hintStyle: TextStyle(color: Colors.white54),
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                        );
+                        if (picked != null) {
+                          dialogSetState(() {
+                            selectedDate = picked;
+                            dueDateController.text = DateFormat('yyyy-MM-dd').format(picked);
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      // ignore: deprecated_member_use
+                      value: selectedStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        labelStyle: TextStyle(color: Colors.white70),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white38),
+                        ),
+                      ),
+                      dropdownColor: const Color(0xFF1A1A1A),
+                      items: const [
+                        DropdownMenuItem(value: 'Not Started', child: Text('Not Started')),
+                        DropdownMenuItem(value: 'Started', child: Text('Started')),
+                        DropdownMenuItem(value: 'In Process', child: Text('In Process')),
+                        DropdownMenuItem(value: 'Done', child: Text('Done')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          dialogSetState(() {
+                            selectedStatus = value;
+                          });
+                        }
+                      },
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.isNotEmpty && dueDateController.text.isNotEmpty) {
+                      setState(() {
+                        sharedTasks[index] = {
+                          'title': titleController.text,
+                          'dueDate': dueDateController.text,
+                          'status': selectedStatus,
+                          'done': selectedStatus == 'Done',
+                          'assignmentId': task['assignmentId'],
+                        };
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A7BFF),
+                  ),
+                  child: const Text('Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _toggleTask(int index) {
     setState(() {
-      _tasks[index]['done'] = !_tasks[index]['done'];
+      sharedTasks[index]['done'] = !sharedTasks[index]['done'];
+      sharedTasks[index]['status'] = sharedTasks[index]['done'] ? 'Done' : 'In Process';
     });
   }
 
@@ -624,7 +857,7 @@ class _TasksPageState extends State<TasksPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: const Text('Tasks', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF000000),
       ),
       floatingActionButton: FloatingActionButton(
@@ -635,9 +868,25 @@ class _TasksPageState extends State<TasksPage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView.builder(
-          itemCount: _tasks.length,
+          itemCount: sharedTasks.length,
           itemBuilder: (context, index) {
-            final task = _tasks[index];
+            final task = sharedTasks[index];
+            final String status = task['status'] ?? 'Started';
+            final String dueDate = task['dueDate'] ?? '';
+            final String daysLeft = formatDaysLeft(dueDate);
+            final bool done = task['done'] ?? false;
+
+            Color statusColor;
+            if (status == 'Done') {
+              statusColor = Colors.green;
+            } else if (status == 'In Process') {
+              statusColor = const Color(0xFF4A7BFF);
+            } else if (status == 'Not Started') {
+              statusColor = Colors.red;
+            } else {
+              statusColor = Colors.orange;
+            }
+
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
@@ -648,20 +897,126 @@ class _TasksPageState extends State<TasksPage> {
               child: Row(
                 children: [
                   Checkbox(
-                    value: task['done'],
+                    value: done,
                     onChanged: (_) => _toggleTask(index),
                     activeColor: const Color(0xFF4A7BFF),
                   ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      task['title'],
-                      style: TextStyle(
-                        color: Colors.white,
-                        decoration: task['done']
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task['title'],
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            decoration: done ? TextDecoration.lineThrough : TextDecoration.none,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                String tempStatus = status;
+                                void updateStatus(String newStatus) {
+                                  setState(() {
+                                    sharedTasks[index]['status'] = newStatus;
+                                    sharedTasks[index]['done'] = newStatus == 'Done';
+                                  });
+                                }
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return StatefulBuilder(
+                                      builder: (context, dialogSetState) {
+                                        return AlertDialog(
+                                          backgroundColor: const Color(0xFF1A1A1A),
+                                          title: const Text('Select Status', style: TextStyle(color: Colors.white)),
+                                          content: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              RadioListTile<String>(
+                                                title: const Text('Not Started', style: TextStyle(color: Colors.white)),
+                                                value: 'Not Started',
+                                                groupValue: tempStatus,
+                                                onChanged: (value) => dialogSetState(() => tempStatus = value!),
+                                                activeColor: const Color(0xFF4A7BFF),
+                                              ),
+                                              RadioListTile<String>(
+                                                title: const Text('Started', style: TextStyle(color: Colors.white)),
+                                                value: 'Started',
+                                                groupValue: tempStatus,
+                                                onChanged: (value) => dialogSetState(() => tempStatus = value!),
+                                                activeColor: const Color(0xFF4A7BFF),
+                                              ),
+                                              RadioListTile<String>(
+                                                title: const Text('In Process', style: TextStyle(color: Colors.white)),
+                                                value: 'In Process',
+                                                groupValue: tempStatus,
+                                                onChanged: (value) => dialogSetState(() => tempStatus = value!),
+                                                activeColor: const Color(0xFF4A7BFF),
+                                              ),
+                                              RadioListTile<String>(
+                                                title: const Text('Done', style: TextStyle(color: Colors.white)),
+                                                value: 'Done',
+                                                groupValue: tempStatus,
+                                                onChanged: (value) => dialogSetState(() => tempStatus = value!),
+                                                activeColor: const Color(0xFF4A7BFF),
+                                              ),
+                                            ],
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context),
+                                              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                updateStatus(tempStatus);
+                                                Navigator.pop(context);
+                                              },
+                                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4A7BFF)),
+                                              child: const Text('Update'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: statusColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                // ignore: prefer_interpolation_to_compose_strings
+                                'Due: $dueDate' + (daysLeft.isNotEmpty ? ' · $daysLeft' : ''),
+                                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.white70),
+                    onPressed: () => _editTask(index),
                   ),
                 ],
               ),
@@ -763,13 +1118,15 @@ class _LecturerPageState extends State<LecturerPage> {
                     dueDateController.text.isNotEmpty &&
                     marksController.text.isNotEmpty) {
                   setState(() {
-                    _assignments.add({
+                    final assignment = {
                       'id': DateTime.now().millisecondsSinceEpoch,
                       'title': titleController.text,
                       'description': descriptionController.text,
                       'dueDate': dueDateController.text,
                       'totalMarks': int.parse(marksController.text),
-                    });
+                    };
+                    _assignments.add(assignment);
+                    mirrorAssignmentToTask(assignment);
                   });
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -854,13 +1211,15 @@ class _LecturerPageState extends State<LecturerPage> {
               onPressed: () {
                 if (titleController.text.isNotEmpty) {
                   setState(() {
-                    _assignments[index] = {
+                    final updatedAssignment = {
                       'id': assignment['id'],
                       'title': titleController.text,
                       'description': descriptionController.text,
                       'dueDate': dueDateController.text,
                       'totalMarks': int.parse(marksController.text),
                     };
+                    _assignments[index] = updatedAssignment;
+                    mirrorAssignmentToTask(updatedAssignment);
                   });
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -899,7 +1258,9 @@ class _LecturerPageState extends State<LecturerPage> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
                 setState(() {
+                  final assignmentId = _assignments[index]['id'];
                   _assignments.removeAt(index);
+                  removeTaskForAssignment(assignmentId);
                 });
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
