@@ -262,7 +262,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex], // show the selected page
+      body: IndexedStack(
+        index: _selectedIndex,
+        children:_pages,
+      ), // show the selected page
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
