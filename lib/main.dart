@@ -555,7 +555,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 }
 
-// Study Page with Pomodoro Timer
+
 // Tasks Page
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
