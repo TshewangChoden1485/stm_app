@@ -249,7 +249,7 @@ class _StudyPageState extends State<StudyPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _infoChip(
-                  'Break',
+                  'Break time',
                   '25 mins',
                   onTap: () {
                     setState(() {
@@ -261,7 +261,7 @@ class _StudyPageState extends State<StudyPage> {
                   },
                 ),
                 _infoChip(
-                  'Break  ',
+                  'Break time ',
                   '10 mins',
                   onTap: () {
                     setState(() {
@@ -273,7 +273,7 @@ class _StudyPageState extends State<StudyPage> {
                   },
                 ),
                 _infoChip(
-                  'Hours Studied',
+                  'Study Hour',
                   '${(totalStudySeconds / 3600).toStringAsFixed(1)}h',
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(

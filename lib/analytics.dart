@@ -72,14 +72,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     color: Colors.blue,
                   ),
                   AnalyticsCard(
-                    label: 'Study Hours',
+                    label: 'Total hours studied',
                     value: '${(totalStudySeconds / 3600).toStringAsFixed(1)}h',
                     color: Colors.green,
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudyPage())),
                   ),
                   AnalyticsCard(
-                    label: 'Units Completed',
-                    value: '5/6',
+                    label: 'Academic Progress',
+                    value: 'Track',
                     color: Colors.orange,
                   ),
                 ],
